@@ -1,5 +1,22 @@
 const prompt = require("prompt-sync")();
 
+const COL = 3;
+const ROW = 3;
+
+const symbolsCount = {
+    A : 3,
+    B : 4,
+    C : 5,
+    D : 6
+}
+
+const symbolsValue = {
+    A : 5,
+    B : 3,
+    C : 2,
+    D : 1
+}
+
 
 const deposit = () => {
     while(true){
@@ -40,6 +57,101 @@ const placeBet = (balance , noOfLines) => {
     }
 }
 
-let balance = deposit();
-const noOfLines = getNoOfLines();
-const bet = placeBet(balance,noOfLines);
+const spin = () => {
+    const symbols = [];
+    
+    for( const [symbol,count] of Object.entries(symbolsCount)){
+        for(let i=0 ; i<count ; i++){
+            symbols.push(symbol);
+        }
+    }
+
+    const reels = [];
+    for( let i=0 ; i<COL ; i++){
+        reels.push([]);     //adds an array as a member.
+        const reelSymbols = [...symbols];
+        for( let j=0 ; j<ROW ; j++){
+            const randomIndex = Math.floor(Math.random()*reelSymbols.length);
+            const chosenSymbol = reelSymbols[randomIndex];
+            
+            reels[i].push(chosenSymbol);
+            reelSymbols.splice(randomIndex,1);
+        }
+    }
+
+    return reels;
+} 
+
+const transpose = (reel) => {
+    const reels = [];
+
+    for(let i=0 ; i<COL ; i++){
+        reels.push([]);
+        for(let j=0 ; j<ROW ; j++){
+            reels[i].push(reel[j][i]);
+        }
+    }
+    return reels;
+}
+
+const print = (reels) => {
+    for(const reel of reels){
+        let string = "";
+        for(const [i,symbol] of reel.entries()){
+            string += symbol;
+            if(i != reel.length-1){
+                string += ' | ';
+            }
+        }
+        console.log(string);
+    }
+}
+
+const getWinnings = (bet , lines , reels ) => {
+    let winnings = 0;
+    let allSame = true;
+    for( let i=0 ; i<lines ; i++ ){
+        const symbols = reels[i];
+        const flag = symbols[0];
+        for(const symbol of symbols){
+            if(symbol != flag){
+                allSame = false;
+                break;
+            }
+        }
+        if(allSame){
+            winnings += bet * symbolsValue[symbols[0]];
+        }
+    }
+    return winnings;
+}
+
+
+const game = () => {
+
+    let balance = deposit();
+    while(true){
+        console.log("your balance is $" + balance);
+
+        const noOfLines = getNoOfLines();
+        const bet = placeBet(balance,noOfLines);
+        balance -= bet* noOfLines;
+        const save = spin();
+        const reel = transpose(save);
+        print(reel);
+        const winnings = getWinnings(bet , noOfLines , reel);
+        balance += winnings;
+        console.log(`You won ${winnings}.!!`);
+
+        if(balance == 0 ){
+            console.log("balance finished!");
+            break;
+        }
+
+        const playAgain =  prompt("play another game?? (y/n) : ");
+        if(playAgain != ('y' || 'Y') ) break;
+    }
+}
+
+
+game();
